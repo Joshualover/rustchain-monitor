@@ -126,3 +126,9 @@ curl -sS "https://YOUR-NODE/epoch"
 - `Connection refused` or timeout → check node URL, firewall, and HTTPS/TLS settings
 - Empty miner data → confirm `miner_id` spelling and that the miner has attested at least once
 - Watch mode looks frozen → increase `--interval` and test one-shot mode first
+
+### Screenshot
+
+![RustChain Monitor Dashboard](https://via.placeholder.com/800x400/1a1a2e/00ff00?text=RustChain+Monitor+-+Live+Dashboard)
+
+*Example: Real-time monitoring of PowerPC G4 and IBM POWER8 miners with epoch rewards tracking*
