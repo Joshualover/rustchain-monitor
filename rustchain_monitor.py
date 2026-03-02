@@ -20,8 +20,34 @@ import requests
 import time
 import argparse
 import json
+import os
 from datetime import datetime
 from typing import Dict, List, Optional
+
+# ANSI color codes
+class Colors:
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
+def supports_color():
+    """Check if terminal supports colors"""
+    if os.environ.get('NO_COLOR'):
+        return False
+    if os.environ.get('FORCE_COLOR'):
+        return True
+    return hasattr(os.sys.stdout, 'isatty') and os.sys.stdout.isatty()
+
+# Global color support flag
+USE_COLORS = supports_color()
+
+def colorize(text, color):
+    """Apply color to text if terminal supports it"""
+    if USE_COLORS:
+        return f"{color}{text}{Colors.RESET}"
+    return text
 
 class RustChainMonitor:
     def __init__(self, node_url: str = "https://50.28.86.131"):
@@ -108,11 +134,18 @@ class RustChainMonitor:
                     last_attest = our_miner.get("last_attestation_time", 0)
                     expected = self.calculate_expected_reward(arch)
                     
+                    # Color-coded status
+                    is_active = time.time() - last_attest < 3600
+                    status_text = '✅ Active' if is_active else '⚠️  Inactive'
+                    status_color = Colors.GREEN if is_active else Colors.YELLOW
+                    status_display = colorize(status_text, status_color)
+                    
                     print(f"║  Hardware: {arch:<43}  ║")
                     print(f"║  Expected: ~{expected:.6f} RTC/epoch{' ' * 19}  ║")
-                    print(f"║  Status:   {'✅ Active' if time.time() - last_attest < 3600 else '⚠️  Inactive':<43}  ║")
+                    print(f"║  Status:   {status_display:<43}  ║")
                 else:
-                    print(f"║  Status:   ⚠️  Not found in active miners{' ' * 13}  ║")
+                    status_display = colorize('⚠️  Not found in active miners', Colors.YELLOW)
+                    print(f"║  Status:   {status_display:<13}  ║")
                 
                 print(f"╚═══════════════════════════════════════════════════════╝")
                 
@@ -130,7 +163,8 @@ class RustChainMonitor:
                 print("\n\n👋 Monitoring stopped")
                 break
             except Exception as e:
-                print(f"\n❌ Error: {e}")
+                error_msg = colorize(f'❌ Error: {e}', Colors.RED)
+                print(f"\n{error_msg}")
                 time.sleep(interval)
     
     def network_summary(self):
@@ -139,10 +173,17 @@ class RustChainMonitor:
         epoch = self.get_epoch()
         miners = self.get_miners()
         
+        # Color-coded node status
+        node_ok = health.get('ok', False)
+        if node_ok:
+            status_display = colorize('✅ Healthy', Colors.GREEN)
+        else:
+            status_display = colorize('❌ Down', Colors.RED)
+        
         print("╔════════════════════════════════════════╗")
         print("║      RustChain Network Summary         ║")
         print("╠════════════════════════════════════════╣")
-        print(f"║  Node:    {health.get('ok', False) and '✅ Healthy' or '❌ Down'}               ║")
+        print(f"║  Node:    {status_display:<30} ║")
         print(f"║  Epoch:   {epoch.get('current_epoch', 'N/A'):<30} ║")
         print(f"║  Miners:  {len(miners)} active{' ' * 20} ║")
         print("╚════════════════════════════════════════╝\n")
