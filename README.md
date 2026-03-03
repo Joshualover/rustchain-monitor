@@ -46,20 +46,126 @@ python3 rustchain_monitor.py --node https://custom-node.com --miner your-id --wa
 
 ## Example Output
 
-```
+### Network Summary Mode
+
+```bash
+$ python3 rustchain_monitor.py
+
 ╔═══════════════════════════════════════════════════════╗
-║  RustChain Miner Monitor - 2026-02-13 18:30:00        ║
+║  RustChain Network Monitor - 2026-03-02 08:15:00      ║
 ╠═══════════════════════════════════════════════════════╣
-║  Miner ID: dual-g4-125                                ║
-║  Balance:  12.450000 RTC                              ║
-║  Epoch:    142                                        ║
-╠═══════════════════════════════════════════════════════╣
-║  Hardware: g4                                         ║
-║  Expected: ~0.375000 RTC/epoch                        ║
-║  Status:   ✅ Active                                  ║
+║  Network Status: ✅ Healthy                           ║
+║  Active Nodes: 3                                      ║
+║  Active Miners: 47                                    ║
+║  Current Epoch: 1847                                  ║
+║  Base Reward: 1.500000 RTC                            ║
 ╚═══════════════════════════════════════════════════════╝
 
-🎉 NEW EPOCH! Earned: 0.382150 RTC
+Hardware Distribution:
+  PowerPC G4:    12 miners (25.5%)
+  PowerPC G5:    8 miners (17.0%)
+  Apple Silicon: 15 miners (31.9%)
+  Modern x86:    12 miners (25.5%)
+```
+
+### Single Miner Watch Mode
+
+```bash
+$ python3 rustchain_monitor.py --miner vintage-g4-mac --watch
+
+╔═══════════════════════════════════════════════════════╗
+║  RustChain Miner Monitor - 2026-03-02 08:15:30        ║
+╠═══════════════════════════════════════════════════════╣
+║  Miner ID: vintage-g4-mac                             ║
+║  Balance:  45.782500 RTC                              ║
+║  Current Epoch: 1847                                  ║
+╠═══════════════════════════════════════════════════════╣
+║  Hardware Type: PowerPC G4                            ║
+║  Multiplier: 2.5×                                     ║
+║  Expected Reward: ~0.375000 RTC/epoch                 ║
+║  Status: ✅ Active (last seen: 2 min ago)             ║
+╚═══════════════════════════════════════════════════════╝
+
+[08:16:00] 🎉 NEW EPOCH! Earned: 0.382150 RTC
+[08:26:00] 🎉 NEW EPOCH! Earned: 0.375000 RTC
+[08:36:00] 🎉 NEW EPOCH! Earned: 0.391250 RTC
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### "ModuleNotFoundError: No module named 'requests'"
+**Solution**: Install required dependencies:
+```bash
+pip install requests
+# Or use the requirements file
+pip install -r requirements.txt
+```
+
+#### "Connection refused" or "Node offline"
+**Solution**: Check if the node is accessible:
+```bash
+# Test node health endpoint
+curl -sk https://50.28.86.131/health
+
+# Try alternative node
+python3 rustchain_monitor.py --node https://rustchain.org/health
+```
+
+#### Miner not found in network
+**Solution**: Verify your miner ID and ensure it's actively attesting:
+```bash
+# Check if your miner is in the active list
+curl -sk https://50.28.86.131/api/miners | python3 -m json.tool | grep "your-miner-id"
+
+# Verify your miner is running
+clawrtc mine --wallet your-wallet --dry-run
+```
+
+#### Watch mode not updating
+**Solution**: Check network connectivity and node status:
+```bash
+# Test with shorter interval
+python3 rustchain_monitor.py --miner your-id --watch --interval 15
+
+# Check node epoch endpoint
+curl -sk https://50.28.86.131/epoch | python3 -m json.tool
+```
+
+### Getting Help
+
+- **Documentation**: See `TASK_SETUP.md` for setup guide
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/Scottcjn/rustchain-monitor/issues)
+- **Discord**: Join the RustChain community for real-time support
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](../.github/CONTRIBUTING.md) for guidelines.
+
+### Quick Contributing
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Make your changes
+4. Test the monitor with your changes
+5. Submit a PR
+
+---
+
+*RustChain Monitor v1.0 - Real-time monitoring for the Proof-of-Antiquity blockchain*
+
+### Node Health Check
+
+```bash
+$ python3 rustchain_monitor.py --node https://rustchain.org/health
+
+Node: https://rustchain.org
+Status: ✅ Online
+Response Time: 127ms
+Last Block: 1847
+Peer Count: 8
+Sync Status: Fully synced
 ```
 
 ## About RustChain
@@ -126,9 +232,3 @@ curl -sS "https://YOUR-NODE/epoch"
 - `Connection refused` or timeout → check node URL, firewall, and HTTPS/TLS settings
 - Empty miner data → confirm `miner_id` spelling and that the miner has attested at least once
 - Watch mode looks frozen → increase `--interval` and test one-shot mode first
-
-### Screenshot
-
-![RustChain Monitor Dashboard](https://via.placeholder.com/800x400/1a1a2e/00ff00?text=RustChain+Monitor+-+Live+Dashboard)
-
-*Example: Real-time monitoring of PowerPC G4 and IBM POWER8 miners with epoch rewards tracking*
